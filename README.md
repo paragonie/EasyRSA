@@ -2,6 +2,10 @@
 
 Simple and Secure Wrapper for PHPSecLib
 
+## Important!
+
+For better security, you want to use [libsodium](https://pecl.php.net/package/libsodium), not EasyRSA.
+
 ## Motivation
 
 Although the long-term security of RSA is questionable (at best) given the
