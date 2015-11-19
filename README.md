@@ -1,5 +1,7 @@
 # EasyRSA
 
+[![Build Status](https://travis-ci.org/paragonie/EasyRSA.svg?branch=master)](https://travis-ci.org/paragonie/EasyRSA)
+
 Simple and Secure Wrapper for PHPSecLib
 
 ## Important!
