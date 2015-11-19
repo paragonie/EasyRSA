@@ -55,7 +55,7 @@ class EncryptionTest extends PHPUnit_Framework_TestCase
             unset($dummy);
             return;
         } catch (\Exception $ex) {
-            $this->assertInstanceOf('\\Exception', $ex);
+            $this->assertInstanceOf('\ParagonIE\EasyRSA\Exception\InvalidChecksumException', $ex);
         }
         $dissect[3] = substr(
             hash('sha256', implode('$', array_slice($dissect, 0, 3))),
@@ -67,7 +67,7 @@ class EncryptionTest extends PHPUnit_Framework_TestCase
             $dummy = EasyRSA::decrypt(implode('$', $dissect), $secretKey);
             $this->fail('This should not have passed.');
         } catch (\Exception $ex) {
-            $this->assertInstanceOf('\\Exception', $ex);
+            $this->assertInstanceOf('\ParagonIE\EasyRSA\Exception\InvalidCiphertextException', $ex);
         }
         
         ///////////////////////////////////////////////////////////////////////
@@ -87,7 +87,7 @@ class EncryptionTest extends PHPUnit_Framework_TestCase
             unset($dummy);
             return;
         } catch (\Exception $ex) {
-            $this->assertInstanceOf('\\Exception', $ex);
+            $this->assertInstanceOf('\ParagonIE\EasyRSA\Exception\InvalidChecksumException', $ex);
         }
         $dissect[3] = substr(
             hash('sha256', implode('$', array_slice($dissect, 0, 3))),

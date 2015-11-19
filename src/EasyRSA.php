@@ -1,9 +1,14 @@
 <?php
 namespace ParagonIE\EasyRSA;
 
+// PHPSecLib:
 use \phpseclib\Crypt\RSA;
 // defuse/php-encryption:
 use \Crypto;
+// Typed Exceptions:
+use \ParagonIE\EasyRSA\Exception\InvalidChecksumException;
+use \ParagonIE\EasyRSA\Exception\InvalidCiphertextException;
+use \ParagonIE\EasyRSA\Exception\InvalidKeyException;
 
 class EasyRSA implements EasyRSAInterface
 {
@@ -18,7 +23,7 @@ class EasyRSA implements EasyRSAInterface
     public static function generateKeyPair($size = 2048)
     {
         if ($size < 2048) {
-            throw new \Exception('Key size must be at least 2048 bits.');
+            throw new InvalidKeyException('Key size must be at least 2048 bits.');
         }
         $rsa = new RSA();
         $keypair = $rsa->createKey($size);
@@ -84,10 +89,10 @@ class EasyRSA implements EasyRSAInterface
     {
         $split = explode(self::SEPARATOR, $ciphertext);
         if (\count($split) !== 4) {
-            throw new \Exception('Invalid ciphertext message');
+            throw new InvalidCiphertextException('Invalid ciphertext message');
         }
         if (!\hash_equals($split[0], self::VERSION_TAG)) {
-            throw new \Exception('Invalid version tag');
+            throw new InvalidCiphertextException('Invalid version tag');
         }
         $checksum = \substr(
             \hash('sha256', implode('$', array_slice($split, 0, 3))),
@@ -95,7 +100,7 @@ class EasyRSA implements EasyRSAInterface
             16
         );
         if (!\hash_equals($split[3], $checksum)) {
-            throw new \Exception('Invalid checksum');
+            throw new InvalidChecksumException('Invalid checksum');
         }
         
         $key = self::rsaDecrypt(
@@ -177,7 +182,7 @@ class EasyRSA implements EasyRSAInterface
         
         $return = @$rsa->decrypt($ciphertext);
         if ($return === false) {
-            throw new \Exception('Decryption failed');
+            throw new InvalidCiphertextException('Decryption failed');
         }
         return $return;
     }
