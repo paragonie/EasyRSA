@@ -174,6 +174,11 @@ class EasyRSA implements EasyRSAInterface
         $rsa->setMGFHash('sha256');
         
         $rsa->loadKey($rsaPrivateKey);
-        return $rsa->decrypt($ciphertext);
+        
+        $return = @$rsa->decrypt($ciphertext);
+        if ($return === false) {
+            throw new \Exception('Decryption failed');
+        }
+        return $return;
     }
 }
