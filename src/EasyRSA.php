@@ -83,6 +83,9 @@ class EasyRSA implements EasyRSAInterface
     public static function decrypt($ciphertext, $rsaPrivateKey)
     {
         $split = explode(self::SEPARATOR, $ciphertext);
+        if (\count($split) !== 4) {
+            throw new \Exception('Invalid ciphertext message');
+        }
         if (!\hash_equals($split[0], self::VERSION_TAG)) {
             throw new \Exception('Invalid version tag');
         }
@@ -169,6 +172,7 @@ class EasyRSA implements EasyRSAInterface
         $rsa = new RSA();
         $rsa->setEncryptionMode(RSA::ENCRYPTION_OAEP);
         $rsa->setMGFHash('sha256');
+        
         $rsa->loadKey($rsaPrivateKey);
         return $rsa->decrypt($ciphertext);
     }
