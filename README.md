@@ -14,6 +14,9 @@ it's possible to use secure RSA in PHP. However, it's not user-friendly enough
 for the average PHP developer to use to its full potential. So we took it upon
 ourselves to offer a user-friendly interface instead.
 
+EasyRSA is MIT licensed and brought to you by the secure PHP development team at
+[Paragon Initiative Enterprises](https://paragonie.com).
+
 ## How to use this library?
 
 ### Generating RSA key pairs
