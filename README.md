@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/paragonie/EasyRSA.svg?branch=master)](https://travis-ci.org/paragonie/EasyRSA)
 
-Simple and Secure Wrapper for PHPSecLib
+Simple and Secure Wrapper for [phpseclib](https://github.com/phpseclib/phpseclib).
 
 ## Important!
 
@@ -15,7 +15,7 @@ advances in index calculus attacks, there are many issues with how RSA is
 implemented in popular PHP cryptography libraries that make it vulnerable to
 attacks *today*.
 
-Thanks to the folks who developed [PHPSecLib](https://github.com/phpseclib/phpseclib),
+Thanks to the folks who developed [phpseclib](https://github.com/phpseclib/phpseclib),
 it's possible to use secure RSA in PHP. However, it's not user-friendly enough
 for the average PHP developer to use to its full potential. So we took it upon
 ourselves to offer a user-friendly interface instead.
