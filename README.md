@@ -24,6 +24,7 @@ EasyRSA is MIT licensed and brought to you by the secure PHP development team at
 [Paragon Initiative Enterprises](https://paragonie.com).
 
 ## How to use this library?
+`composer require paragonie/easyrsa`
 
 ### Generating RSA key pairs
 
