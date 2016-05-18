@@ -31,14 +31,19 @@ EasyRSA is MIT licensed and brought to you by the secure PHP development team at
 You can generate 2048-bit keys (or larger) using EasyRSA. The default size is 2048.
 
 ```php
-use \ParagonIE\EasyRSA\EasyRSA;
+use \ParagonIE\EasyRSA\KeyPair;
 
-list($secretKey, $publicKey) = EasyRSA::generateKeyPair(4096);
+KeyPair::generateKeyPair(4096);
+    $secretKey = $keyPair->getPrivateKey();
+    $publicKey = $keyPair->getPublicKey();
+
 ```
 
 ### Encrypting/Decrypting a Message
 
 ```php
+use \ParagonIE\EasyRSA\EasyRSA;
+
 $ciphertext = EasyRSA::encrypt($message, $publicKey);
 
 $plaintext = EasyRSA::decrypt($ciphertext, $secretKey);
@@ -47,6 +52,8 @@ $plaintext = EasyRSA::decrypt($ciphertext, $secretKey);
 ### Signing/Verifying a Message
 
 ```php
+use \ParagonIE\EasyRSA\EasyRSA;
+
 $signature = EasyRSA::sign($message, $secretKey);
 
 if (EasyRSA::verify($message, $signature, $publicKey)) {

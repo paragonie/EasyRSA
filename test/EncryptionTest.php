@@ -1,11 +1,15 @@
 <?php
+use \ParagonIE\ConstantTime\Base64;
 use \ParagonIE\EasyRSA\EasyRSA;
+use \ParagonIE\EasyRSA\KeyPair;
 
 class EncryptionTest extends PHPUnit_Framework_TestCase
 {
     public function testEncrypt()
     {
-        list($secretKey, $publicKey) = EasyRSA::generateKeyPair(2048);
+        $keyPair = KeyPair::generateKeyPair(2048);
+            $secretKey = $keyPair->getPrivateKey();
+            $publicKey = $keyPair->getPublicKey();
         
         $plain = str_repeat(
             'This is a relatively long plaintext message, far longer than RSA could safely encrypt directly.' . "\n",
@@ -16,13 +20,15 @@ class EncryptionTest extends PHPUnit_Framework_TestCase
         
         $dissect = explode('$', $encrypt);
         $this->assertEquals(EasyRSA::VERSION_TAG, $dissect[0]);
-        $this->assertTrue($decrypt === $plain);
+        $this->assertEquals($decrypt, $plain);
         
-        $size = strlen($plain) + (16 - (strlen($plain) % 16));
+        $size = strlen($plain);
+            $size += 4;  // Header
             $size += 16; // IV
+            $size += 32; // HHKF Salt
             $size += 32; // HMAC
         $this->assertEquals(
-            strlen(base64_decode($dissect[2])),
+            strlen(Base64::decode($dissect[2])),
             $size
         );
     }
@@ -30,12 +36,14 @@ class EncryptionTest extends PHPUnit_Framework_TestCase
     public function testFailure()
     {
         try {
-            list($secretKey, $publicKey) = EasyRSA::generateKeyPair(1024);
+            KeyPair::generateKeyPair(1024);
             $this->fail('Accepts too small of a key size!');
             return;
-        } catch (\Exception $e) {
-            list($secretKey, $publicKey) = EasyRSA::generateKeyPair(2048);
+        } catch (\Exception $ex) {
+            $keyPair = KeyPair::generateKeyPair(2048);
         }
+        $secretKey = $keyPair->getPrivateKey();
+        $publicKey = $keyPair->getPublicKey();
         
         $plain = 'Short Message';
         $encrypt = EasyRSA::encrypt($plain, $publicKey);
@@ -50,9 +58,8 @@ class EncryptionTest extends PHPUnit_Framework_TestCase
         );
         $dissect[1] = base64_encode($dissect[1]);
         try {
-            $dummy = EasyRSA::decrypt(implode('$', $dissect), $secretKey);
+            EasyRSA::decrypt(implode('$', $dissect), $secretKey);
             $this->fail('Checksum collision or logic error.');
-            unset($dummy);
             return;
         } catch (\Exception $ex) {
             $this->assertInstanceOf('\ParagonIE\EasyRSA\Exception\InvalidChecksumException', $ex);
@@ -64,7 +71,7 @@ class EncryptionTest extends PHPUnit_Framework_TestCase
         );
         
         try {
-            $dummy = EasyRSA::decrypt(implode('$', $dissect), $secretKey);
+            EasyRSA::decrypt(implode('$', $dissect), $secretKey);
             $this->fail('This should not have passed.');
         } catch (\Exception $ex) {
             $this->assertInstanceOf('\ParagonIE\EasyRSA\Exception\InvalidCiphertextException', $ex);
@@ -80,7 +87,7 @@ class EncryptionTest extends PHPUnit_Framework_TestCase
         $dissect[2][$l] = \chr(
             \ord($dissect[2][$l]) ^ (1 << mt_rand(0, 7))
         );
-        $dissect[2] = base64_encode($dissect[2]);
+        $dissect[2] = Base64::encode($dissect[2]);
         try {
             $dummy = EasyRSA::decrypt(implode('$', $dissect), $secretKey);
             $this->fail('Checksum collision or logic error.');
@@ -94,12 +101,12 @@ class EncryptionTest extends PHPUnit_Framework_TestCase
             0,
             16
         );
-        
+
         try {
-            $decrypt = EasyRSA::decrypt(implode('$', $dissect), $secretKey);
+            EasyRSA::decrypt(implode('$', $dissect), $secretKey);
             $this->fail('This should not have passed.');
         } catch (\Exception $ex) {
-            $this->assertInstanceOf('\\InvalidCiphertextException', $ex);
+            $this->assertInstanceOf('\Defuse\Crypto\Exception\WrongKeyOrModifiedCiphertextException', $ex);
         }
     }
 }

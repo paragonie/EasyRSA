@@ -4,35 +4,18 @@ namespace ParagonIE\EasyRSA;
 // PHPSecLib:
 use \phpseclib\Crypt\RSA;
 // defuse/php-encryption:
-use \Crypto;
+use \ParagonIE\ConstantTime\Base64;
+use \Defuse\Crypto\Key;
+use \Defuse\Crypto\Crypto;
 // Typed Exceptions:
 use \ParagonIE\EasyRSA\Exception\InvalidChecksumException;
 use \ParagonIE\EasyRSA\Exception\InvalidCiphertextException;
-use \ParagonIE\EasyRSA\Exception\InvalidKeyException;
 
 class EasyRSA implements EasyRSAInterface
 {
     const SEPARATOR = '$';
     const VERSION_TAG = "EzR1";
-    
-    /**
-     * Generate a private/public RSA key pair
-     * 
-     * @return array [private, public]
-     */
-    public static function generateKeyPair($size = 2048)
-    {
-        if ($size < 2048) {
-            throw new InvalidKeyException('Key size must be at least 2048 bits.');
-        }
-        $rsa = new RSA();
-        $keypair = $rsa->createKey($size);
-        return array(
-            $keypair['privatekey'],
-            $keypair['publickey']
-        );
-    }
-    
+
     /**
      * Encrypt a message with defuse/php-encryption, using an ephemeral key, 
      * then encrypt the key with RSA.
@@ -42,19 +25,19 @@ class EasyRSA implements EasyRSAInterface
      * 
      * @return string
      */
-    public static function encrypt($plaintext, $rsaPublicKey)
+    public static function encrypt($plaintext, PublicKey $rsaPublicKey)
     {
         // Random encryption key
-        $ephemeral = Crypto::createNewRandomKey();
+        $ephemeral = Key::createNewRandomKey();
         
         // Encrypt the actual message
-        $symmetric = \base64_encode(
-            Crypto::encrypt($plaintext, $ephemeral)
+        $symmetric = Base64::encode(
+            Crypto::encrypt($plaintext, $ephemeral, true)
         );
         
         // Use RSA to encrypt the encryption key
         $storeKey = \base64_encode(
-            self::rsaEncrypt($ephemeral, $rsaPublicKey)
+            self::rsaEncrypt($ephemeral->saveToAsciiSafeString(), $rsaPublicKey)
         );
         
         $packaged = \implode(self::SEPARATOR,
@@ -85,7 +68,7 @@ class EasyRSA implements EasyRSAInterface
      * 
      * @return string
      */
-    public static function decrypt($ciphertext, $rsaPrivateKey)
+    public static function decrypt($ciphertext, PrivateKey $rsaPrivateKey)
     {
         $split = explode(self::SEPARATOR, $ciphertext);
         if (\count($split) !== 4) {
@@ -103,13 +86,16 @@ class EasyRSA implements EasyRSAInterface
             throw new InvalidChecksumException('Invalid checksum');
         }
         
-        $key = self::rsaDecrypt(
-            \base64_decode($split[1]),
-            $rsaPrivateKey
+        $key = Key::loadFromAsciiSafeString(
+            self::rsaDecrypt(
+                Base64::decode($split[1]),
+                $rsaPrivateKey
+            )
         );
         return Crypto::Decrypt(
-            \base64_decode($split[2]),
-            $key
+            Base64::decode($split[2]),
+            $key,
+            true
         );
     }
     
@@ -120,13 +106,13 @@ class EasyRSA implements EasyRSAInterface
      * @param string $rsaPrivateKey
      * @return string
      */
-    public static function sign($message, $rsaPrivateKey)
+    public static function sign($message, PrivateKey $rsaPrivateKey)
     {
         $rsa = new RSA();
         $rsa->setSignatureMode(RSA::SIGNATURE_PSS);
         $rsa->setMGFHash('sha256');
         
-        $rsa->loadKey($rsaPrivateKey);
+        $rsa->loadKey($rsaPrivateKey->getKey());
         return $rsa->sign($message);
     }
     
@@ -135,16 +121,16 @@ class EasyRSA implements EasyRSAInterface
      * 
      * @param string $message
      * @param string $signature
-     * @param string $rsaPublicKey
+     * @param PublicKey $rsaPublicKey
      * @return bool
      */
-    public static function verify($message, $signature, $rsaPublicKey)
+    public static function verify($message, $signature, PublicKey $rsaPublicKey)
     {
         $rsa = new RSA();
         $rsa->setSignatureMode(RSA::SIGNATURE_PSS);
         $rsa->setMGFHash('sha256');
         
-        $rsa->loadKey($rsaPublicKey);
+        $rsa->loadKey($rsaPublicKey->getKey());
         return $rsa->verify($message, $signature);
     }
     
@@ -155,13 +141,13 @@ class EasyRSA implements EasyRSAInterface
      * @param string $rsaPublicKey
      * @return string
      */
-    protected static function rsaEncrypt($plaintext, $rsaPublicKey)
+    protected static function rsaEncrypt($plaintext, PublicKey $rsaPublicKey)
     {
         $rsa = new RSA();
         $rsa->setEncryptionMode(RSA::ENCRYPTION_OAEP);
         $rsa->setMGFHash('sha256');
         
-        $rsa->loadKey($rsaPublicKey);
+        $rsa->loadKey($rsaPublicKey->getKey());
         return $rsa->encrypt($plaintext);
     }
     
@@ -172,13 +158,13 @@ class EasyRSA implements EasyRSAInterface
      * @param string $rsaPrivateKey
      * @return string
      */
-    protected static function rsaDecrypt($ciphertext, $rsaPrivateKey)
+    protected static function rsaDecrypt($ciphertext, PrivateKey $rsaPrivateKey)
     {
         $rsa = new RSA();
         $rsa->setEncryptionMode(RSA::ENCRYPTION_OAEP);
         $rsa->setMGFHash('sha256');
         
-        $rsa->loadKey($rsaPrivateKey);
+        $rsa->loadKey($rsaPrivateKey->getKey());
         
         $return = @$rsa->decrypt($ciphertext);
         if ($return === false) {
