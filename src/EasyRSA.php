@@ -21,7 +21,7 @@ class EasyRSA implements EasyRSAInterface
      * then encrypt the key with RSA.
      * 
      * @param string $plaintext
-     * @param string $rsaPublicKey
+     * @param PublicKey $rsaPublicKey
      * 
      * @return string
      */
@@ -64,9 +64,11 @@ class EasyRSA implements EasyRSAInterface
      * then encrypt the key with RSA.
      * 
      * @param string $ciphertext
-     * @param string $rsaPrivateKey
+     * @param PrivateKey $rsaPrivateKey
      * 
      * @return string
+     * @throws InvalidCiphertextException
+     * @throws InvalidChecksumException
      */
     public static function decrypt($ciphertext, PrivateKey $rsaPrivateKey)
     {
@@ -103,14 +105,17 @@ class EasyRSA implements EasyRSAInterface
      * Sign with RSASS-PSS + MGF1+SHA256
      * 
      * @param string $message
-     * @param string $rsaPrivateKey
+     * @param PrivateKey $rsaPrivateKey
      * @return string
      */
     public static function sign($message, PrivateKey $rsaPrivateKey)
     {
-        $rsa = new RSA();
-        $rsa->setSignatureMode(RSA::SIGNATURE_PSS);
-        $rsa->setMGFHash('sha256');
+        static $rsa = null;
+        if (!$rsa) {
+            $rsa = new RSA();
+            $rsa->setSignatureMode(RSA::SIGNATURE_PSS);
+            $rsa->setMGFHash('sha256');
+        }
         
         $rsa->loadKey($rsaPrivateKey->getKey());
         return $rsa->sign($message);
@@ -126,9 +131,12 @@ class EasyRSA implements EasyRSAInterface
      */
     public static function verify($message, $signature, PublicKey $rsaPublicKey)
     {
-        $rsa = new RSA();
-        $rsa->setSignatureMode(RSA::SIGNATURE_PSS);
-        $rsa->setMGFHash('sha256');
+        static $rsa = null;
+        if (!$rsa) {
+            $rsa = new RSA();
+            $rsa->setSignatureMode(RSA::SIGNATURE_PSS);
+            $rsa->setMGFHash('sha256');
+        }
         
         $rsa->loadKey($rsaPublicKey->getKey());
         return $rsa->verify($message, $signature);
@@ -138,14 +146,18 @@ class EasyRSA implements EasyRSAInterface
      * Decrypt with RSAES-OAEP + MGF1+SHA256
      * 
      * @param string $plaintext
-     * @param string $rsaPublicKey
+     * @param PublicKey $rsaPublicKey
      * @return string
+     * @throws InvalidCiphertextException
      */
     protected static function rsaEncrypt($plaintext, PublicKey $rsaPublicKey)
     {
-        $rsa = new RSA();
-        $rsa->setEncryptionMode(RSA::ENCRYPTION_OAEP);
-        $rsa->setMGFHash('sha256');
+        static $rsa = null;
+        if (!$rsa) {
+            $rsa = new RSA();
+            $rsa->setEncryptionMode(RSA::ENCRYPTION_OAEP);
+            $rsa->setMGFHash('sha256');
+        }
         
         $rsa->loadKey($rsaPublicKey->getKey());
         return $rsa->encrypt($plaintext);
@@ -155,14 +167,18 @@ class EasyRSA implements EasyRSAInterface
      * Decrypt with RSAES-OAEP + MGF1+SHA256
      * 
      * @param string $ciphertext
-     * @param string $rsaPrivateKey
+     * @param PrivateKey $rsaPrivateKey
      * @return string
+     * @throws InvalidCiphertextException
      */
     protected static function rsaDecrypt($ciphertext, PrivateKey $rsaPrivateKey)
     {
-        $rsa = new RSA();
-        $rsa->setEncryptionMode(RSA::ENCRYPTION_OAEP);
-        $rsa->setMGFHash('sha256');
+        static $rsa = null;
+        if (!$rsa) {
+            $rsa = new RSA();
+            $rsa->setEncryptionMode(RSA::ENCRYPTION_OAEP);
+            $rsa->setMGFHash('sha256');
+        }
         
         $rsa->loadKey($rsaPrivateKey->getKey());
         
