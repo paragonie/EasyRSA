@@ -33,9 +33,10 @@ You can generate 2048-bit keys (or larger) using EasyRSA. The default size is 20
 ```php
 use \ParagonIE\EasyRSA\KeyPair;
 
-KeyPair::generateKeyPair(4096);
-    $secretKey = $keyPair->getPrivateKey();
-    $publicKey = $keyPair->getPublicKey();
+$keyPair = KeyPair::generateKeyPair(4096);
+
+$secretKey = $keyPair->getPrivateKey();
+$publicKey = $keyPair->getPublicKey();
 
 ```
 
