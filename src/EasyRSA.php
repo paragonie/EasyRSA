@@ -256,12 +256,7 @@ class EasyRSA implements EasyRSAInterface
      */
     protected static function defuseKey($randomBytes)
     {
-        $key = Key::createNewRandomKey();
-        $func = function ($bytes) {
-            $this->key_bytes = $bytes;
-        };
-        $helper = $func->bindTo($key, $key);
-        $helper($randomBytes);
-        return $key;
+        $kludege = new Kludge();
+        return $kludege->defuseKey($randomBytes);
     }
 }
