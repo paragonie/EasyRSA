@@ -15,7 +15,6 @@ class EasyRSA implements EasyRSAInterface
 {
     const SEPARATOR = '$';
     const VERSION_TAG = "EzR2";
-    const LEGACY_TAG = "EzR1";
 
     /**
      * KEM+DEM approach to RSA encryption.
@@ -83,9 +82,6 @@ class EasyRSA implements EasyRSAInterface
         if (\count($split) !== 4) {
             throw new InvalidCiphertextException('Invalid ciphertext message');
         }
-        if (\hash_equals($split[0], self::LEGACY_TAG)) {
-            return self::legacyDecrypt($ciphertext, $rsaPrivateKey);
-        }
         if (!\hash_equals($split[0], self::VERSION_TAG)) {
             throw new InvalidCiphertextException('Invalid version tag');
         }
@@ -111,48 +107,6 @@ class EasyRSA implements EasyRSAInterface
         );
 
         $key = self::defuseKey($symmetricKey);
-        return Crypto::decrypt(
-            Base64::decode($split[2]),
-            $key,
-            true
-        );
-    }
-
-    /**
-     * Encrypt a message with defuse/php-encryption, using an ephemeral key,
-     * then encrypt the key with RSA.
-     *
-     * @param string $ciphertext
-     * @param PrivateKey $rsaPrivateKey
-     *
-     * @return string
-     * @throws InvalidCiphertextException
-     * @throws InvalidChecksumException
-     */
-    public static function legacyDecrypt($ciphertext, PrivateKey $rsaPrivateKey)
-    {
-        $split = explode(self::SEPARATOR, $ciphertext);
-        if (\count($split) !== 4) {
-            throw new InvalidCiphertextException('Invalid ciphertext message');
-        }
-        if (!\hash_equals($split[0], self::VERSION_TAG)) {
-            throw new InvalidCiphertextException('Invalid version tag');
-        }
-        $checksum = \substr(
-            \hash('sha256', implode('$', array_slice($split, 0, 3))),
-            0,
-            16
-        );
-        if (!\hash_equals($split[3], $checksum)) {
-            throw new InvalidChecksumException('Invalid checksum');
-        }
-
-        $key = Key::loadFromAsciiSafeString(
-            self::rsaDecrypt(
-                Base64::decode($split[1]),
-                $rsaPrivateKey
-            )
-        );
         return Crypto::decrypt(
             Base64::decode($split[2]),
             $key,
