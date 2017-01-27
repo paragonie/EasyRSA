@@ -64,12 +64,14 @@ if (EasyRSA::verify($message, $signature, $publicKey)) {
 
 ## What Does it Do Under the Hood?
 
-* Encryption
-    * Generates an ephemeral encryption key
+* Encryption (KEM+DEM)
+    * Generates an random secret value
+    * Encrypts the random secret value with your RSA public key, using PHPSecLib
+      (RSAES-OAEP + MGF1-SHA256)
+    * Derives an encryption key from the secret value and its RSA-encrypted ciphertext, 
+      using HMAC-SHA256.
     * Encrypts your plaintext message using [defuse/php-encryption](https://github.com/defuse/php-encryption)
       (authenticated symmetric-key encryption)
-    * Encrypts the ephemeral key with your RSA public key, using PHPSecLib
-      (RSAES-OAEP + MGF1-SHA256)
     * Calculates a checksum of both encrypted values (and a version tag)
 * Authentication
     * Signs a message using PHPSecLib (RSASS-PSS + MGF1-SHA256)
