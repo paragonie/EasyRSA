@@ -40,7 +40,7 @@ class EasyRSA implements EasyRSAInterface
             $random_key,
             true
         );
-        $ephemeral = Key::loadFromRawBytesForTestingPurposesOnlyInsecure(
+        $ephemeral = self::defuseKey(
             $symmetricKey
         );
 
@@ -110,7 +110,7 @@ class EasyRSA implements EasyRSAInterface
             true
         );
 
-        $key = Key::loadFromRawBytesForTestingPurposesOnlyInsecure($symmetricKey);
+        $key = self::defuseKey($symmetricKey);
         return Crypto::decrypt(
             Base64::decode($split[2]),
             $key,
@@ -246,5 +246,22 @@ class EasyRSA implements EasyRSAInterface
             throw new InvalidCiphertextException('Decryption failed');
         }
         return $return;
+    }
+
+    /**
+     * Use an internally generated key in a Defuse context
+     *
+     * @param string $randomBytes
+     * @return Key
+     */
+    protected static function defuseKey($randomBytes)
+    {
+        $key = Key::createNewRandomKey();
+        $func = function ($bytes) {
+            $this->key_bytes = $bytes;
+        };
+        $helper = $func->bindTo($key, $key);
+        $helper($randomBytes);
+        return $key;
     }
 }
