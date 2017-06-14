@@ -2,6 +2,7 @@
 namespace ParagonIE\EasyRSA;
 
 // PHPSecLib:
+use ParagonIE\EasyRSA\Exception\InvalidKeyException;
 use \phpseclib\Crypt\RSA;
 // defuse/php-encryption:
 use \ParagonIE\ConstantTime\Base64;
@@ -15,6 +16,39 @@ class EasyRSA implements EasyRSAInterface
 {
     const SEPARATOR = '$';
     const VERSION_TAG = "EzR2";
+
+    static private $rsa;
+
+    /**
+     * Set RSA to use in between calls
+     *
+     * @param RSA|null $rsa
+     */
+    public static function setRsa(RSA $rsa = null)
+    {
+        self::$rsa = $rsa;
+    }
+
+    /**
+     * Get RSA
+     *
+     * @param int $mode
+     *
+     * @return RSA
+     */
+    public static function getRsa($mode)
+    {
+        if (self::$rsa) {
+            $rsa = self::$rsa;
+        } else {
+            $rsa = new RSA();
+            $rsa->setMGFHash('sha256');
+        }
+
+        $rsa->setSignatureMode($mode);
+
+        return $rsa;
+    }
 
     /**
      * KEM+DEM approach to RSA encryption.
@@ -123,14 +157,13 @@ class EasyRSA implements EasyRSAInterface
      */
     public static function sign($message, PrivateKey $rsaPrivateKey)
     {
-        static $rsa = null;
-        if (!$rsa) {
-            $rsa = new RSA();
-            $rsa->setSignatureMode(RSA::SIGNATURE_PSS);
-            $rsa->setMGFHash('sha256');
+        $rsa = self::getRsa(RSA::SIGNATURE_PSS);
+
+        $return = $rsa->loadKey($rsaPrivateKey->getKey());
+        if ($return === false) {
+            throw new InvalidKeyException('Signing failed due to invalid key');
         }
 
-        $rsa->loadKey($rsaPrivateKey->getKey());
         return $rsa->sign($message);
     }
 
@@ -144,14 +177,13 @@ class EasyRSA implements EasyRSAInterface
      */
     public static function verify($message, $signature, PublicKey $rsaPublicKey)
     {
-        static $rsa = null;
-        if (!$rsa) {
-            $rsa = new RSA();
-            $rsa->setSignatureMode(RSA::SIGNATURE_PSS);
-            $rsa->setMGFHash('sha256');
+        $rsa = self::getRsa(RSA::SIGNATURE_PSS);
+
+        $return = $rsa->loadKey($rsaPublicKey->getKey());
+        if ($return === false) {
+            throw new InvalidKeyException('Verification failed due to invalid key');
         }
 
-        $rsa->loadKey($rsaPublicKey->getKey());
         return $rsa->verify($message, $signature);
     }
 
@@ -165,14 +197,13 @@ class EasyRSA implements EasyRSAInterface
      */
     protected static function rsaEncrypt($plaintext, PublicKey $rsaPublicKey)
     {
-        static $rsa = null;
-        if (!$rsa) {
-            $rsa = new RSA();
-            $rsa->setEncryptionMode(RSA::ENCRYPTION_OAEP);
-            $rsa->setMGFHash('sha256');
+        $rsa = self::getRsa(RSA::ENCRYPTION_OAEP);
+
+        $return = $rsa->loadKey($rsaPublicKey->getKey());
+        if ($return === false) {
+            throw new InvalidKeyException('Ecryption failed due to invalid key');
         }
 
-        $rsa->loadKey($rsaPublicKey->getKey());
         return $rsa->encrypt($plaintext);
     }
 
@@ -186,14 +217,12 @@ class EasyRSA implements EasyRSAInterface
      */
     protected static function rsaDecrypt($ciphertext, PrivateKey $rsaPrivateKey)
     {
-        static $rsa = null;
-        if (!$rsa) {
-            $rsa = new RSA();
-            $rsa->setEncryptionMode(RSA::ENCRYPTION_OAEP);
-            $rsa->setMGFHash('sha256');
-        }
+        $rsa = self::getRsa(RSA::ENCRYPTION_OAEP);
 
-        $rsa->loadKey($rsaPrivateKey->getKey());
+        $return = $rsa->loadKey($rsaPrivateKey->getKey());
+        if ($return === false) {
+            throw new InvalidKeyException('Decryption failed due to invalid key');
+        }
 
         $return = @$rsa->decrypt($ciphertext);
         if ($return === false) {
