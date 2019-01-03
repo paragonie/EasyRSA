@@ -80,6 +80,10 @@ if (EasyRSA::verify($message, $signature, $publicKey)) {
 }
 ```
 
+## Compatibility
+
+EasyRSA is only compatible with itself. It is not compatible with OpenGPG (GnuPG, Mailvelope, etc.) You'll want [GPG-Mailer](https://github.com/paragonie/gpg-mailer) instead.
+
 ## What Does it Do Under the Hood?
 
 * Encryption (KEM+DEM)
