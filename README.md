@@ -31,19 +31,32 @@ EasyRSA is MIT licensed and brought to you by the secure PHP development team at
 You can generate 2048-bit keys (or larger) using EasyRSA. The default size is 2048.
 
 ```php
-use \ParagonIE\EasyRSA\KeyPair;
+<?php
+use ParagonIE\EasyRSA\KeyPair;
 
 $keyPair = KeyPair::generateKeyPair(4096);
 
 $secretKey = $keyPair->getPrivateKey();
 $publicKey = $keyPair->getPublicKey();
+```
 
+#### Getting the Raw Key
+
+```php
+<?php
+/** @var \ParagonIE\EasyRSA\PublicKey $publicKey */
+var_dump($publicKey->getKey());
 ```
 
 ### Encrypting/Decrypting a Message
 
 ```php
-use \ParagonIE\EasyRSA\EasyRSA;
+<?php
+use ParagonIE\EasyRSA\EasyRSA;
+
+$message = "test";
+/** @var \ParagonIE\EasyRSA\PublicKey $publicKey */
+/** @var \ParagonIE\EasyRSA\PrivateKey $secretKey */
 
 $ciphertext = EasyRSA::encrypt($message, $publicKey);
 
@@ -53,7 +66,12 @@ $plaintext = EasyRSA::decrypt($ciphertext, $secretKey);
 ### Signing/Verifying a Message
 
 ```php
-use \ParagonIE\EasyRSA\EasyRSA;
+<?php
+use ParagonIE\EasyRSA\EasyRSA;
+
+$message = "test";
+/** @var \ParagonIE\EasyRSA\PublicKey $publicKey */
+/** @var \ParagonIE\EasyRSA\PrivateKey $secretKey */
 
 $signature = EasyRSA::sign($message, $secretKey);
 
@@ -75,3 +93,8 @@ if (EasyRSA::verify($message, $signature, $publicKey)) {
     * Calculates a checksum of both encrypted values (and a version tag)
 * Authentication
     * Signs a message using PHPSecLib (RSASS-PSS + MGF1-SHA256)
+
+## Support Contracts
+
+If your company uses this library in their products or services, you may be
+interested in [purchasing a support contract from Paragon Initiative Enterprises](https://paragonie.com/enterprise).
