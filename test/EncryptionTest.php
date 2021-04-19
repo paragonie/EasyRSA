@@ -1,9 +1,10 @@
 <?php
-use \ParagonIE\ConstantTime\Base64;
-use \ParagonIE\EasyRSA\EasyRSA;
-use \ParagonIE\EasyRSA\KeyPair;
+use ParagonIE\ConstantTime\Base64;
+use ParagonIE\EasyRSA\EasyRSA;
+use ParagonIE\EasyRSA\KeyPair;
+use PHPUnit\Framework\TestCase;
 
-class EncryptionTest extends PHPUnit_Framework_TestCase
+class EncryptionTest extends TestCase
 {
     public function testEncrypt()
     {

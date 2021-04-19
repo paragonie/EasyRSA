@@ -1,14 +1,18 @@
 <?php
 namespace ParagonIE\EasyRSA;
 
-
+/**
+ * Class PrivateKey
+ * @package ParagonIE\EasyRSA
+ */
 class PrivateKey
 {
+    /** @var string $keyMaterial */
     protected $keyMaterial = '';
 
     /**
      * PrivateKey constructor.
-     * @param $string
+     * @param string $string
      */
     public function __construct($string)
     {
@@ -24,14 +28,14 @@ class PrivateKey
     }
 
     /**
-     * return PublicKey
+     * @return PublicKey
      */
     public function getPublicKey()
     {
         $res = \openssl_pkey_get_private($this->keyMaterial);
         $pubkey = \openssl_pkey_get_details($res);
         $public = \rtrim(
-            \str_replace("\n", "\r\n", $pubkey['key']),
+            \str_replace("\n", "\r\n", (string) $pubkey['key']),
             "\r\n"
         );
         return new PublicKey($public);

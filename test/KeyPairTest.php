@@ -1,7 +1,8 @@
 <?php
-use \ParagonIE\EasyRSA\KeyPair;
+use ParagonIE\EasyRSA\KeyPair;
+use PHPUnit\Framework\TestCase;
 
-class KeyPairTest extends PHPUnit_Framework_TestCase
+class KeyPairTest extends TestCase
 {
     public function testBasicFunctions()
     {

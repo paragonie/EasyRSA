@@ -1,8 +1,9 @@
 <?php
-use \ParagonIE\EasyRSA\EasyRSA;
-use \ParagonIE\EasyRSA\KeyPair;
+use ParagonIE\EasyRSA\EasyRSA;
+use ParagonIE\EasyRSA\KeyPair;
+use PHPUnit\Framework\TestCase;
 
-class SignatureTest extends PHPUnit_Framework_TestCase
+class SignatureTest extends TestCase
 {
     public function testSign()
     {
