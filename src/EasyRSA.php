@@ -3,26 +3,32 @@ namespace ParagonIE\EasyRSA;
 
 // PHPSecLib:
 use ParagonIE\EasyRSA\Exception\InvalidKeyException;
-use \phpseclib\Crypt\RSA;
+use phpseclib\Crypt\RSA;
 // defuse/php-encryption:
-use \ParagonIE\ConstantTime\Base64;
-use \Defuse\Crypto\Key;
-use \Defuse\Crypto\Crypto;
+use ParagonIE\ConstantTime\Base64;
+use Defuse\Crypto\Key;
+use Defuse\Crypto\Crypto;
 // Typed Exceptions:
-use \ParagonIE\EasyRSA\Exception\InvalidChecksumException;
-use \ParagonIE\EasyRSA\Exception\InvalidCiphertextException;
+use ParagonIE\EasyRSA\Exception\InvalidChecksumException;
+use ParagonIE\EasyRSA\Exception\InvalidCiphertextException;
 
+/**
+ * Class EasyRSA
+ * @package ParagonIE\EasyRSA
+ */
 class EasyRSA implements EasyRSAInterface
 {
     const SEPARATOR = '$';
     const VERSION_TAG = "EzR2";
 
+    /** @var ?RSA $rsa */
     static private $rsa;
 
     /**
      * Set RSA to use in between calls
      *
      * @param RSA|null $rsa
+     * @return void
      */
     public static function setRsa(RSA $rsa = null)
     {
@@ -38,7 +44,8 @@ class EasyRSA implements EasyRSAInterface
      */
     public static function getRsa($mode)
     {
-        if (self::$rsa) {
+        /** @var RSA $rsa */
+        if (!\is_null(self::$rsa)) {
             $rsa = self::$rsa;
         } else {
             $rsa = new RSA();
@@ -225,7 +232,7 @@ class EasyRSA implements EasyRSAInterface
         }
 
         $return = @$rsa->decrypt($ciphertext);
-        if ($return === false) {
+        if (!\is_string($return)) {
             throw new InvalidCiphertextException('Decryption failed');
         }
         return $return;
