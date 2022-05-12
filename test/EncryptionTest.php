@@ -75,7 +75,10 @@ class EncryptionTest extends TestCase
             EasyRSA::decrypt(implode('$', $dissect), $secretKey);
             $this->fail('This should not have passed.');
         } catch (\Exception $ex) {
-            $this->assertInstanceOf('\ParagonIE\EasyRSA\Exception\InvalidCiphertextException', $ex);
+            $this->assertSame(
+                'Decryption error',
+                $ex->getMessage()
+            );
         }
         
         ///////////////////////////////////////////////////////////////////////

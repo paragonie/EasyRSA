@@ -1,16 +1,20 @@
 <?php
 namespace ParagonIE\EasyRSA;
 
+use ParagonIE\ConstantTime\Base64;
 // PHPSecLib:
-use ParagonIE\EasyRSA\Exception\InvalidKeyException;
 use phpseclib\Crypt\RSA;
 // defuse/php-encryption:
-use ParagonIE\ConstantTime\Base64;
 use Defuse\Crypto\Key;
 use Defuse\Crypto\Crypto;
+use Defuse\Crypto\Exception\EnvironmentIsBrokenException;
+use Defuse\Crypto\Exception\WrongKeyOrModifiedCiphertextException;
 // Typed Exceptions:
+use ParagonIE\EasyRSA\Exception\EasyRSAException;
+use ParagonIE\EasyRSA\Exception\InvalidKeyException;
 use ParagonIE\EasyRSA\Exception\InvalidChecksumException;
 use ParagonIE\EasyRSA\Exception\InvalidCiphertextException;
+use Exception;
 
 /**
  * Class EasyRSA
@@ -64,17 +68,26 @@ class EasyRSA implements EasyRSAInterface
      * @param PublicKey $rsaPublicKey
      *
      * @return string
+     *
+     * @throws EasyRSAException
+     * @throws EnvironmentIsBrokenException
+     * @throws InvalidCiphertextException
+     * @throws InvalidKeyException
      */
     public static function encrypt($plaintext, PublicKey $rsaPublicKey)
     {
         // Random encryption key
-        $random_key = random_bytes(32);
+        try {
+            $random_key = \random_bytes(32);
+        } catch (Exception $ex) {
+            throw new EasyRSAException("Could not generate one-time key", 0, $ex);
+        }
 
         // Use RSA to encrypt the random key
         $rsaOut = self::rsaEncrypt($random_key, $rsaPublicKey);
 
         // Generate a symmetric key from the RSA output and plaintext
-        $symmetricKey = hash_hmac(
+        $symmetricKey = \hash_hmac(
             'sha256',
             $rsaOut,
             $random_key,
@@ -112,14 +125,18 @@ class EasyRSA implements EasyRSAInterface
      *
      * @param string $ciphertext
      * @param PrivateKey $rsaPrivateKey
-     *
      * @return string
+     *
+     * @throws EnvironmentIsBrokenException
      * @throws InvalidCiphertextException
      * @throws InvalidChecksumException
+     * @throws WrongKeyOrModifiedCiphertextException
+     *
+     * @psalm-suppress MixedArgumentTypeCoercion
      */
     public static function decrypt($ciphertext, PrivateKey $rsaPrivateKey)
     {
-        $split = explode(self::SEPARATOR, $ciphertext);
+        $split = \explode(self::SEPARATOR, $ciphertext);
         if (\count($split) !== 4) {
             throw new InvalidCiphertextException('Invalid ciphertext message');
         }
@@ -156,22 +173,29 @@ class EasyRSA implements EasyRSAInterface
     }
 
     /**
-     * Sign with RSASS-PSS + MGF1+SHA256
+     * Sign with RSASSA-PSS + MGF1+SHA256
      *
      * @param string $message
      * @param PrivateKey $rsaPrivateKey
      * @return string
+     *
+     * @throws EasyRSAException
+     * @throws InvalidKeyException
      */
     public static function sign($message, PrivateKey $rsaPrivateKey)
     {
         $rsa = self::getRsa(RSA::SIGNATURE_PSS);
 
-        $return = $rsa->loadKey($rsaPrivateKey->getKey());
-        if ($return === false) {
+        $loaded = $rsa->loadKey($rsaPrivateKey->getKey());
+        if (!$loaded) {
             throw new InvalidKeyException('Signing failed due to invalid key');
         }
 
-        return $rsa->sign($message);
+        $signed = $rsa->sign($message);
+        if (!\is_string($signed)) {
+            throw new EasyRSAException('RSA Encryption failed');
+        }
+        return $signed;
     }
 
     /**
@@ -181,13 +205,15 @@ class EasyRSA implements EasyRSAInterface
      * @param string $signature
      * @param PublicKey $rsaPublicKey
      * @return bool
+     *
+     * @throws InvalidKeyException
      */
     public static function verify($message, $signature, PublicKey $rsaPublicKey)
     {
         $rsa = self::getRsa(RSA::SIGNATURE_PSS);
 
-        $return = $rsa->loadKey($rsaPublicKey->getKey());
-        if ($return === false) {
+        $loaded = $rsa->loadKey($rsaPublicKey->getKey());
+        if (!$loaded) {
             throw new InvalidKeyException('Verification failed due to invalid key');
         }
 
@@ -200,7 +226,10 @@ class EasyRSA implements EasyRSAInterface
      * @param string $plaintext
      * @param PublicKey $rsaPublicKey
      * @return string
+     *
+     * @throws EasyRSAException
      * @throws InvalidCiphertextException
+     * @throws InvalidKeyException
      */
     protected static function rsaEncrypt($plaintext, PublicKey $rsaPublicKey)
     {
@@ -208,10 +237,14 @@ class EasyRSA implements EasyRSAInterface
 
         $return = $rsa->loadKey($rsaPublicKey->getKey());
         if ($return === false) {
-            throw new InvalidKeyException('Ecryption failed due to invalid key');
+            throw new InvalidKeyException('Encryption failed due to invalid key');
         }
 
-        return $rsa->encrypt($plaintext);
+        $ciphertext = $rsa->encrypt($plaintext);
+        if (!\is_string($ciphertext)) {
+            throw new EasyRSAException('RSA Encryption failed');
+        }
+        return $ciphertext;
     }
 
     /**
@@ -220,18 +253,20 @@ class EasyRSA implements EasyRSAInterface
      * @param string $ciphertext
      * @param PrivateKey $rsaPrivateKey
      * @return string
+     *
      * @throws InvalidCiphertextException
+     * @throws InvalidKeyException
      */
     protected static function rsaDecrypt($ciphertext, PrivateKey $rsaPrivateKey)
     {
         $rsa = self::getRsa(RSA::ENCRYPTION_OAEP);
 
-        $return = $rsa->loadKey($rsaPrivateKey->getKey());
-        if ($return === false) {
+        $loaded = $rsa->loadKey($rsaPrivateKey->getKey());
+        if (!$loaded) {
             throw new InvalidKeyException('Decryption failed due to invalid key');
         }
 
-        $return = @$rsa->decrypt($ciphertext);
+        $return = $rsa->decrypt($ciphertext);
         if (!\is_string($return)) {
             throw new InvalidCiphertextException('Decryption failed');
         }

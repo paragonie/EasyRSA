@@ -1,7 +1,7 @@
 <?php
 namespace ParagonIE\EasyRSA\Exception;
 
-class InvalidKeyException extends \Exception
+class InvalidKeyException extends EasyRSAException
 {
     
 }
